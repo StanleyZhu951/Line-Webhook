@@ -2,7 +2,7 @@ from flask import Flask, request, abort
 from linebot.v3.webhook import WebhookHandler
 from linebot.v3.exceptions import InvalidSignatureError
 from linebot.v3.messaging import Configuration, MessagingApi, ApiClient
-from linebot.v3.messaging.models import TextMessage
+from linebot.v3.messaging.models import TextMessage, ReplyMessageRequest
 from linebot.v3.webhooks import MessageEvent
 from linebot.v3.webhooks.models import TextMessageContent
 from openai import OpenAI
@@ -39,22 +39,22 @@ def callback():
 def handle_message(event):
     print("✅ handle_message 被觸發")
     print(f"📨 使用者訊息事件：{event}")
-    
+
     usr = event.message.text.strip().upper()
     print(f"✏️ 使用者輸入：{usr}")
 
     if usr not in ["A", "B", "C", "D"]:
-        line_api.reply_message(event.reply_token, [TextMessage(text="請輸入 A、B、C 或 D 作答！")])
+        send_reply(event.reply_token, "請輸入 A、B、C 或 D 作答！")
         return
 
     if not os.path.exists("latest_question.txt"):
-        line_api.reply_message(event.reply_token, [TextMessage(text="⚠️ 目前尚無題目可作答，請稍後！")])
+        send_reply(event.reply_token, "⚠️ 目前尚無題目可作答，請稍後！")
         return
 
     try:
         corr, ques = open("latest_question.txt", "r", encoding="utf-8").read().split("|", 1)
     except Exception as e:
-        line_api.reply_message(event.reply_token, [TextMessage(text=f"❌ 題目讀取失敗：{str(e)}")])
+        send_reply(event.reply_token, f"❌ 題目讀取失敗：{str(e)}")
         return
 
     if usr == corr:
@@ -73,8 +73,17 @@ def handle_message(event):
         except Exception as e:
             reply = f"❌ 答錯了… 正確答案是 {corr}。\n⚠️ 解析失敗：{str(e)}"
 
+    send_reply(event.reply_token, reply)
+
+# ✅ 專門封裝 LINE 回覆的函式（符合 SDK v3 寫法）
+def send_reply(reply_token, message_text):
     try:
-        line_api.reply_message(event.reply_token, [TextMessage(text=reply)])
+        line_api.reply_message(
+            ReplyMessageRequest(
+                reply_token=reply_token,
+                messages=[TextMessage(text=message_text)]
+            )
+        )
     except Exception as e:
         print(f"❌ 回覆失敗：{str(e)}")
 
