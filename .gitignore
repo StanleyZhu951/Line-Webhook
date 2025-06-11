@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Jupyter
+.ipynb_checkpoints/
+
+# VSCode 或其他 IDE 設定
+.vscode/
+.idea/
+
+# dotenv
+.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# logs
+*.log
+
+# render 自動建立的 build 檔
+build/

@@ -1,0 +1,6 @@
+flask
+gunicorn
+line-bot-sdk==3.5.0
+openai
+python-dotenv
+python-docx
