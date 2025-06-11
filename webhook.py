@@ -26,22 +26,22 @@ def callback():
     print("✅ webhook 被觸發")
     signature = request.headers.get("X-Line-Signature", "")
     body = request.get_data(as_text=True)
+    print(f"📦 webhook 請求內容：{body}")
     try:
         handler.handle(body, signature)
     except InvalidSignatureError:
+        print("❌ 簽名驗證失敗")
         abort(400)
     return "OK"
 
-# ✅ 改成只接收 MessageEvent，內部判斷是否為 TextMessageContent
-@handler.add(MessageEvent)
+# ✅ 明確指定只處理文字訊息事件
+@handler.add(MessageEvent, message=TextMessageContent)
 def handle_message(event):
-    print(f"✅ 收到使用者訊息：{event.message.text}")
-    if not isinstance(event.message, TextMessageContent):
-        print("❌ 非文字訊息，跳過")
-        return
-
+    print("✅ handle_message 被觸發")
+    print(f"📨 使用者訊息事件：{event}")
+    
     usr = event.message.text.strip().upper()
-    print(f"✅ 收到使用者回覆：{usr}")
+    print(f"✏️ 使用者輸入：{usr}")
 
     if usr not in ["A", "B", "C", "D"]:
         line_api.reply_message(event.reply_token, [TextMessage(text="請輸入 A、B、C 或 D 作答！")])
@@ -77,12 +77,12 @@ def handle_message(event):
         line_api.reply_message(event.reply_token, [TextMessage(text=reply)])
     except Exception as e:
         print(f"❌ 回覆失敗：{str(e)}")
-        
+
+# 顯示環境變數狀態
 print(f"LINE_ACCESS_TOKEN: {os.getenv('LINE_ACCESS_TOKEN')}")
 print(f"LINE_CHANNEL_SECRET: {os.getenv('LINE_CHANNEL_SECRET')}")
-print(f"OPENAI_API_KEY: {('SET' if os.getenv('OPENAI_API_KEY') else 'MISSING')}")
+print(f"OPENAI_API_KEY: {'SET' if os.getenv('OPENAI_API_KEY') else 'MISSING'}")
+
 # 啟動 Flask 應用
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
-
-
