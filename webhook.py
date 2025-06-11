@@ -43,12 +43,23 @@ def handle_message(event):
     usr = event.message.text.strip().upper()
     print(f"✏️ 使用者輸入：{usr}")
 
+    # ✅ 如果使用者輸入「出題」，出下一題
+    if usr == "出題":
+        ques, error = ask_next_question()
+        if error:
+            send_reply(event.reply_token, error)
+        else:
+            send_reply(event.reply_token, f"📝 題目來囉：{ques}")
+        return
+
+    # ✅ 檢查是否為有效選項
     if usr not in ["A", "B", "C", "D"]:
         send_reply(event.reply_token, "請輸入 A、B、C 或 D 作答！")
         return
 
+    # ✅ 檢查是否有題目可答
     if not os.path.exists("latest_question.txt"):
-        send_reply(event.reply_token, "⚠️ 目前尚無題目可作答，請稍後！")
+        send_reply(event.reply_token, "⚠️ 目前尚無題目可作答，請先輸入「出題」！")
         return
 
     try:
@@ -57,6 +68,7 @@ def handle_message(event):
         send_reply(event.reply_token, f"❌ 題目讀取失敗：{str(e)}")
         return
 
+    # ✅ 判斷答對與否
     if usr == corr:
         reply = f"✅ 答對了！正確答案是 {corr}。做得好！"
     else:
@@ -75,7 +87,7 @@ def handle_message(event):
 
     send_reply(event.reply_token, reply)
 
-# ✅ 專門封裝 LINE 回覆的函式（符合 SDK v3 寫法）
+# ✅ 封裝回覆函式
 def send_reply(reply_token, message_text):
     try:
         line_api.reply_message(
@@ -87,7 +99,30 @@ def send_reply(reply_token, message_text):
     except Exception as e:
         print(f"❌ 回覆失敗：{str(e)}")
 
-# 顯示環境變數狀態
+# ✅ 出題函式：每次叫用會從 questions.txt 裡出下一題
+def ask_next_question():
+    if not os.path.exists("questions.txt") or not os.path.exists("current_index.txt"):
+        return None, "❌ 找不到題庫或索引檔案"
+
+    with open("questions.txt", "r", encoding="utf-8") as f:
+        questions = f.readlines()
+
+    with open("current_index.txt", "r", encoding="utf-8") as f:
+        index = int(f.read().strip())
+
+    if index >= len(questions):
+        return None, "✅ 題目已經全部出完囉！"
+
+    corr, ques = questions[index].strip().split("|", 1)
+
+    with open("latest_question.txt", "w", encoding="utf-8") as f:
+        f.write(f"{corr}|{ques}")
+    with open("current_index.txt", "w", encoding="utf-8") as f:
+        f.write(str(index + 1))
+
+    return ques, None
+
+# 顯示環境變數狀態（除錯用）
 print(f"LINE_ACCESS_TOKEN: {os.getenv('LINE_ACCESS_TOKEN')}")
 print(f"LINE_CHANNEL_SECRET: {os.getenv('LINE_CHANNEL_SECRET')}")
 print(f"OPENAI_API_KEY: {'SET' if os.getenv('OPENAI_API_KEY') else 'MISSING'}")
