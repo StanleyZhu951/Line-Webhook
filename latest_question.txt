@@ -1,5 +1,5 @@
-B|9. Neither my sister nor my parents _____ going to attend the concert tonight. (A)
-(A) are
-(B) is
-(C) am
-(D) be
+C|1. I felt the ground _____ during the earthquake.(B)
+(A) shake
+(B) shaking
+(C) shook
+(D) shakes
